@@ -1,5 +1,5 @@
 # Ben Awad Full Stack Tutorial
-Followed a tutorial to learn some new tech. See URL for the link to the YouTube video
+Followed a tutorial to learn some new tech. 
 
 His repo is here: https://github.com/benawad/lireddit
 
