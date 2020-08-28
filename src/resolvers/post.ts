@@ -1,5 +1,5 @@
 import { MyContext } from './../types'
-import { Resolver, Query, Ctx, Arg, Int } from 'type-graphql'
+import { Resolver, Query, Ctx, Arg, Mutation } from 'type-graphql'
 import { Post } from '../entities/Post'
 
 @Resolver()
@@ -14,7 +14,7 @@ export class PostResolver {
     return em.findOne(Post, { id })
   }
 
-  @Query(() => Post)
+  @Mutation(() => Post)
   async createPost (
     @Arg('title') title: string,
     @Ctx() { em }: MyContext
@@ -24,7 +24,7 @@ export class PostResolver {
     return post
   }
 
-  @Query(() => Post)
+  @Mutation(() => Post)
   async updatePost (
     @Arg('id') id: number,
     @Arg('title') title: string,
@@ -41,7 +41,7 @@ export class PostResolver {
     return post
   }
 
-  @Query(() => Post)
+  @Mutation(() => Boolean)
   async deletePost (
     @Arg('id') id: number,
     @Ctx() { em }: MyContext
