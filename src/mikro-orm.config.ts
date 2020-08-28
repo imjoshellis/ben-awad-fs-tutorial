@@ -1,3 +1,4 @@
+import { User } from './entities/User'
 import { MikroORM } from '@mikro-orm/core'
 import { Post } from './entities/Post'
 import { __prod__ } from './constants'
@@ -8,7 +9,7 @@ export const microConfig = {
     path: path.join(__dirname, './migrations'),
     pattern: /^[\w-]+\d+\.[jt]s$/
   },
-  entities: [Post],
+  entities: [Post, User],
   dbName: 'bafstut',
   type: 'postgresql',
   debug: !__prod__
