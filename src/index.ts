@@ -1,16 +1,16 @@
-import { MyContext } from './types'
-import 'reflect-metadata'
-import { UserResolver } from './resolvers/user'
 import { MikroORM } from '@mikro-orm/core'
+import { ApolloServer } from 'apollo-server-express'
+import connectRedis from 'connect-redis'
+import express from 'express'
+import session from 'express-session'
+import redis from 'redis'
+import 'reflect-metadata'
+import { buildSchema } from 'type-graphql'
 import { __prod__ } from './constants'
 import microConfig from './mikro-orm.config'
-import express from 'express'
-import { ApolloServer } from 'apollo-server-express'
-import { buildSchema } from 'type-graphql'
 import { PostResolver } from './resolvers/post'
-import redis from 'redis'
-import session from 'express-session'
-import connectRedis from 'connect-redis'
+import { UserResolver } from './resolvers/user'
+import { MyContext, MyContextArgs } from './types'
 
 const main = async () => {
   const orm = await MikroORM.init(microConfig)
@@ -34,6 +34,7 @@ const main = async () => {
         sameSite: 'lax', // csrf
         secure: __prod__ // https only
       },
+      saveUninitialized: false,
       secret: 'arsitenariesntwufnt',
       resave: false
     })
@@ -44,7 +45,11 @@ const main = async () => {
       resolvers: [PostResolver, UserResolver],
       validate: false
     }),
-    context: ({ req, res }): MyContext => ({ em: orm.em, req, res })
+    context: ({ req, res }: MyContextArgs): MyContext => ({
+      em: orm.em,
+      req,
+      res
+    })
   })
 
   apolloServer.applyMiddleware({ app })
