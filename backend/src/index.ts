@@ -1,6 +1,7 @@
 import { MikroORM } from '@mikro-orm/core'
 import { ApolloServer } from 'apollo-server-express'
 import connectRedis from 'connect-redis'
+import cors from 'cors'
 import express from 'express'
 import session from 'express-session'
 import redis from 'redis'
@@ -20,6 +21,13 @@ const main = async () => {
 
   const RedisStore = connectRedis(session)
   const redisClient = redis.createClient()
+
+  app.use(
+    cors({
+      origin: 'http://localhost:3000',
+      credentials: true
+    })
+  )
 
   app.use(
     session({
@@ -52,7 +60,10 @@ const main = async () => {
     })
   })
 
-  apolloServer.applyMiddleware({ app })
+  apolloServer.applyMiddleware({
+    app,
+    cors: false
+  })
 
   app.listen(4000, () => {
     console.log('server started on localhost:4000')
