@@ -1,3 +1,4 @@
+import { COOKIE_NAME } from './../constants'
 import { EntityManager } from '@mikro-orm/postgresql'
 import { MyContext } from './../types'
 import argon2 from 'argon2'
@@ -79,7 +80,7 @@ export class UserResolver {
         .returning('*')
       user = result[0]
     } catch (err) {
-      if (err.code === '25305') {
+      if (err.code === '23505') {
         return {
           errors: [{ field: 'username', message: 'username already exists' }]
         }
@@ -115,5 +116,20 @@ export class UserResolver {
     req.session.userId = user.id
 
     return { user }
+  }
+
+  @Mutation(() => Boolean)
+  logout (@Ctx() { req, res }: MyContext) {
+    return new Promise(resolve =>
+      req.session.destroy(err => {
+        res.clearCookie(COOKIE_NAME)
+        if (err) {
+          console.error(err)
+          resolve(false)
+          return
+        }
+        resolve(true)
+      })
+    )
   }
 }
