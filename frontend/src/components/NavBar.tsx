@@ -17,7 +17,7 @@ export const NavBar: React.FC<NavBarProps> = () => {
         <NextLink href='/login'>
           <Link p={4}>login</Link>
         </NextLink>
-        <NextLink href='/login'>
+        <NextLink href='/register'>
           <Link p={4}>register</Link>
         </NextLink>
       </>
