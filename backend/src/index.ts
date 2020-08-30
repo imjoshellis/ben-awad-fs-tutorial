@@ -12,10 +12,10 @@ import microConfig from './mikro-orm.config'
 import { PostResolver } from './resolvers/post'
 import { UserResolver } from './resolvers/user'
 import { MyContext, MyContextArgs } from './types'
-import { sendEmail } from './utils/sendEmail'
+// import { sendEmail } from './utils/sendEmail'
 
 const main = async () => {
-  sendEmail('email@ienawrtienawt.com', 'hello there')
+  // sendEmail('email@ienawrtienawt.com', 'hello there')
   const orm = await MikroORM.init(microConfig)
   await orm.getMigrator().up()
 
