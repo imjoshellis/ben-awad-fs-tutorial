@@ -74,7 +74,8 @@ export class UserResolver {
         errors: [{ field: 'newPassword', message: 'password too short' }]
       }
     }
-    const userId = await redis.get(FORGET_PASSWORD_PREFIX + token)
+    const key = FORGET_PASSWORD_PREFIX + token
+    const userId = await redis.get(key)
     if (!userId) {
       return {
         errors: [{ field: 'token', message: 'token expired' }]
@@ -93,6 +94,7 @@ export class UserResolver {
     await em.persistAndFlush(user)
 
     req.session.userId = user.id
+    await redis.del(key)
 
     return { user }
   }

@@ -1,4 +1,5 @@
-import { Box, Button } from '@chakra-ui/core'
+import { Box, Button, Link } from '@chakra-ui/core'
+import NextLink from 'next/link'
 import { Form, Formik } from 'formik'
 import { useRouter } from 'next/router'
 import React from 'react'
@@ -41,6 +42,11 @@ export const Login: React.FC<RegisterProps> = () => {
                 placeholder='password'
                 type='password'
               />
+            </Box>
+            <Box>
+              <NextLink href='/forgot-password'>
+                <Link>forgot?</Link>
+              </NextLink>
             </Box>
             <Button
               type='submit'
