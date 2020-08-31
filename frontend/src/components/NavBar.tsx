@@ -28,7 +28,12 @@ export const NavBar: React.FC<NavBarProps> = () => {
         <NextLink href='/account'>
           <Link>{data.me.username}</Link>
         </NextLink>
-        <Button isLoading={fetchingLogout} onClick={() => logout()} p={4}>
+        <Button
+          ml={4}
+          isLoading={fetchingLogout}
+          onClick={() => logout()}
+          p={4}
+        >
           logout
         </Button>
       </>
