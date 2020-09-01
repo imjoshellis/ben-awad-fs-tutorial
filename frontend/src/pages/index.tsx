@@ -1,4 +1,5 @@
 import { Box, Button, Flex, Heading, Stack, Text } from '@chakra-ui/core'
+import moment from 'moment'
 import { withUrqlClient } from 'next-urql'
 import NextLink from 'next/link'
 import Layout from '../components/Layout'
@@ -28,6 +29,10 @@ const Index = () => {
           {data.posts.posts.map(p => (
             <Box key={p.id} shadow='md' borderWidth='1px' p={4}>
               <Heading fontSize='xl'>{p.title}</Heading>
+              <Text>
+                Posted {moment(parseInt(p.createdAt)).fromNow()} by{' '}
+                {p.creator.username} • {p.points} points
+              </Text>
               <Text mt={4}>{p.textSnippet}... (read more)</Text>
             </Box>
           ))}

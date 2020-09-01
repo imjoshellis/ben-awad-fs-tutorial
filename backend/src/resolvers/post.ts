@@ -1,21 +1,22 @@
-import { isAuth } from './../middleware/isAuth'
-import { MyContext } from './../types'
 import {
   Arg,
+  Ctx,
+  Field,
+  FieldResolver,
+  InputType,
+  Int,
   Mutation,
+  ObjectType,
   Query,
   Resolver,
-  InputType,
-  Field,
-  Ctx,
-  UseMiddleware,
-  Int,
-  FieldResolver,
   Root,
-  ObjectType
+  UseMiddleware
 } from 'type-graphql'
-import { Post } from '../entities/Post'
 import { getConnection } from 'typeorm'
+import { Post } from '../entities/Post'
+import { Updoot } from './../entities/Updoot'
+import { isAuth } from './../middleware/isAuth'
+import { MyContext } from './../types'
 
 @InputType()
 class PostInput {
@@ -40,6 +41,35 @@ export class PostResolver {
     return root.text.slice(0, 50)
   }
 
+  @Mutation(() => Boolean)
+  @UseMiddleware(isAuth)
+  async vote (
+    @Arg('postId', () => Int) postId: number,
+    @Arg('value', () => Int) value: number,
+    @Ctx() { req }: MyContext
+  ) {
+    const isUpdoot = value !== -1
+    const realValue = isUpdoot ? 1 : -1
+    const { userId } = req.session
+
+    await getConnection().transaction(async transactionalEntityManager => {
+      await transactionalEntityManager
+        .createQueryBuilder()
+        .insert()
+        .into(Updoot)
+        .values({ userId, postId, value: realValue })
+        .execute()
+      await transactionalEntityManager
+        .createQueryBuilder()
+        .update(Post)
+        .set({ points: () => `points + ${realValue}` })
+        .where({ id: postId })
+        .execute()
+    })
+
+    return true
+  }
+
   @Query(() => PaginatedPosts)
   async posts (
     @Arg('limit', () => Int) limit: number,
@@ -53,37 +83,37 @@ export class PostResolver {
       replacements.push(new Date(parseInt(cursor)))
     }
 
-    const posts = await getConnection().query(
-      `
-    select p.*,
-    json_build_object(
-      'id', u.id,
-      'username', u.username,
-      'email', u.email,
-      'createdAt', u."createdAt",
-      'updatedAt', u."updatedAt"
-      ) creator
-    from post p
-    inner join public.user u on u.id = p."creatorId"
-    ${cursor ? `where p."createdAt" < $2` : ''}
-    order by p."createdAt" DESC
-    limit $1
-    `,
-      replacements
-    )
+    // const posts = await getConnection().query(
+    //   `
+    // select p.*,
+    // json_build_object(
+    //   'id', u.id,
+    //   'username', u.username,
+    //   'email', u.email,
+    //   'createdAt', u."createdAt",
+    //   'updatedAt', u."updatedAt"
+    //   ) creator
+    // from post p
+    // inner join public.user u on u.id = p."creatorId"
+    // ${cursor ? `where p."createdAt" < $2` : ''}
+    // order by p."createdAt" DESC
+    // limit $1
+    // `,
+    //   replacements
+    // )
 
-    // const qb = getConnection()
-    //   .getRepository(Post)
-    //   .createQueryBuilder('p')
-    //   .innerJoinAndSelect('p.creator', 'u', 'u.id = p."creatorId"')
-    //   .orderBy('p."createdAt"', 'DESC')
-    //   .take(realLimitPlusOne)
-    // if (cursor) {
-    //   qb.where('p."createdAt" < :cursor', {
-    //     cursor: new Date(parseInt(cursor))
-    //   })
-    // }
-    // const posts = await qb.getMany()
+    const qb = getConnection()
+      .getRepository(Post)
+      .createQueryBuilder('p')
+      .innerJoinAndSelect('p.creator', 'u', 'u.id = p."creatorId"')
+      .orderBy('p.createdAt', 'DESC')
+      .take(realLimitPlusOne)
+    if (cursor) {
+      qb.where('p.createdAt < :cursor', {
+        cursor: new Date(parseInt(cursor))
+      })
+    }
+    const posts = await qb.getMany()
     return {
       posts: posts.slice(0, realLimit),
       hasMore: posts.length === realLimitPlusOne
