@@ -1,4 +1,5 @@
-import { PaginatedPosts } from './../generated/graphql'
+import { gql } from 'graphql-tag'
+import { PaginatedPosts, VoteMutationVariables } from './../generated/graphql'
 import { stringifyVariables } from '@urql/core'
 import { cacheExchange, Resolver } from '@urql/exchange-graphcache'
 import Router from 'next/router'
@@ -75,6 +76,26 @@ export const createUrqlClient = (ssrExchange: any) => ({
       },
       updates: {
         Mutation: {
+          vote: (_result, args, cache, info) => {
+            const { postId, value } = args as VoteMutationVariables
+            cache.readFragment(
+              gql`
+                fragment _ on Post {
+                  id
+                  points
+                }
+              `,
+              { id: postId } as any
+            )
+          },
+          createPost: (_result, args, cache, info) => {
+            cache
+              .inspectFields('Query')
+              .filter(info => info.fieldName === 'posts')
+              .forEach(fi =>
+                cache.invalidate('Query', 'posts', fi.arguments || undefined)
+              )
+          },
           login: (_result, args, cache, info) => {
             betterUpdateQuery<LoginMutation, MeQuery>(
               cache,

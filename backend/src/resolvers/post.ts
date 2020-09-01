@@ -48,24 +48,42 @@ export class PostResolver {
     @Arg('value', () => Int) value: number,
     @Ctx() { req }: MyContext
   ) {
+    const { userId } = req.session
+    const updoot = await Updoot.findOne({ postId, userId })
     const isUpdoot = value !== -1
     const realValue = isUpdoot ? 1 : -1
-    const { userId } = req.session
 
-    await getConnection().transaction(async transactionalEntityManager => {
-      await transactionalEntityManager
-        .createQueryBuilder()
-        .insert()
-        .into(Updoot)
-        .values({ userId, postId, value: realValue })
-        .execute()
-      await transactionalEntityManager
-        .createQueryBuilder()
-        .update(Post)
-        .set({ points: () => `points + ${realValue}` })
-        .where({ id: postId })
-        .execute()
-    })
+    if (updoot && updoot.value !== realValue) {
+      await getConnection().transaction(async tm => {
+        await tm
+          .createQueryBuilder()
+          .update(Updoot)
+          .set({ value: realValue })
+          .where({ postId: updoot.postId, userId: updoot.userId })
+          .execute()
+        await tm
+          .createQueryBuilder()
+          .update(Post)
+          .set({ points: () => `points + ${2 * realValue}` })
+          .where({ id: updoot.postId })
+          .execute()
+      })
+    } else {
+      await getConnection().transaction(async tm => {
+        await tm
+          .createQueryBuilder()
+          .insert()
+          .into(Updoot)
+          .values({ userId, postId, value: realValue })
+          .execute()
+        await tm
+          .createQueryBuilder()
+          .update(Post)
+          .set({ points: () => `points + ${realValue}` })
+          .where({ id: postId })
+          .execute()
+      })
+    }
 
     return true
   }
@@ -82,25 +100,6 @@ export class PostResolver {
     if (cursor) {
       replacements.push(new Date(parseInt(cursor)))
     }
-
-    // const posts = await getConnection().query(
-    //   `
-    // select p.*,
-    // json_build_object(
-    //   'id', u.id,
-    //   'username', u.username,
-    //   'email', u.email,
-    //   'createdAt', u."createdAt",
-    //   'updatedAt', u."updatedAt"
-    //   ) creator
-    // from post p
-    // inner join public.user u on u.id = p."creatorId"
-    // ${cursor ? `where p."createdAt" < $2` : ''}
-    // order by p."createdAt" DESC
-    // limit $1
-    // `,
-    //   replacements
-    // )
 
     const qb = getConnection()
       .getRepository(Post)
