@@ -13,17 +13,20 @@ import { User } from './entities/User'
 import { PostResolver } from './resolvers/post'
 import { UserResolver } from './resolvers/user'
 import { MyContext, MyContextArgs } from './types'
+import path from 'path'
 
 const main = async () => {
-  await createConnection({
+  const conn = await createConnection({
     type: 'postgres',
     database: 'lireddit',
     username: 'dev',
     password: 'dev',
     logging: true,
     synchronize: true,
+    migrations: [path.join(__dirname, './migrations/*')],
     entities: [Post, User]
   })
+  await conn.runMigrations()
 
   const app = express()
 

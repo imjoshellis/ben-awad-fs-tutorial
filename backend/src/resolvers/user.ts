@@ -35,6 +35,11 @@ class UserResponse {
 
 @Resolver()
 export class UserResolver {
+  @Query(() => [User])
+  users () {
+    return User.find()
+  }
+
   @Mutation(() => Boolean)
   async forgotPassword (
     @Arg('email') email: string,

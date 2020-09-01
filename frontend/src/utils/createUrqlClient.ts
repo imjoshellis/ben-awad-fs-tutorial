@@ -1,4 +1,7 @@
-import { cacheExchange } from '@urql/exchange-graphcache'
+import { PaginatedPosts } from './../generated/graphql'
+import { stringifyVariables } from '@urql/core'
+import { cacheExchange, Resolver } from '@urql/exchange-graphcache'
+import Router from 'next/router'
 import { dedupExchange, Exchange, fetchExchange } from 'urql'
 import { pipe, tap } from 'wonka'
 import {
@@ -9,7 +12,6 @@ import {
   RegisterMutation
 } from '../generated/graphql'
 import { betterUpdateQuery } from './betterUpdateQuery'
-import Router from 'next/router'
 
 const errorExchange: Exchange = ({ forward }) => ops$ => {
   return pipe(
@@ -23,6 +25,38 @@ const errorExchange: Exchange = ({ forward }) => ops$ => {
   )
 }
 
+export const cursorPagination = (): Resolver => {
+  return (_parent, fieldArgs, cache, info) => {
+    const { parentKey: entityKey, fieldName } = info
+
+    const allFields = cache.inspectFields(entityKey)
+    const fieldInfos = allFields.filter(info => info.fieldName === fieldName)
+    const size = fieldInfos.length
+    if (size === 0) {
+      return undefined
+    }
+
+    const fieldKey = `${fieldName}(${stringifyVariables(fieldArgs)})`
+    const isItInTheCache = cache.resolve(
+      cache.resolveFieldByKey(entityKey, fieldKey) as string,
+      'posts'
+    )
+    info.partial = !isItInTheCache
+
+    const results: string[] = []
+    let hasMore = true
+    fieldInfos.forEach(fi => {
+      const key = cache.resolveFieldByKey(entityKey, fi.fieldKey) as string
+      if (!cache.resolve(key, 'hasMore')) {
+        hasMore = false
+      }
+      const data = cache.resolve(key, 'posts') as string[]
+      results.push(...data)
+    })
+    return { __typename: 'PaginatedPosts', hasMore, posts: results }
+  }
+}
+
 export const createUrqlClient = (ssrExchange: any) => ({
   url: 'http://localhost:4000/graphql',
   fetchOptions: {
@@ -31,6 +65,14 @@ export const createUrqlClient = (ssrExchange: any) => ({
   exchanges: [
     dedupExchange,
     cacheExchange({
+      keys: {
+        PaginatedPosts: () => null
+      },
+      resolvers: {
+        Query: {
+          posts: cursorPagination()
+        }
+      },
       updates: {
         Mutation: {
           login: (_result, args, cache, info) => {

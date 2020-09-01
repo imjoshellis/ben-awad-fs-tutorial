@@ -45,14 +45,14 @@ export const ChangePassword = () => {
                 type='password'
               />
             </Box>
-            {tokenError && (
+            {tokenError ? (
               <Box>
                 <Box color={'#f00'}>{tokenError}</Box>
                 <NextLink href='/forgot-password'>
                   <Link>go forget it again</Link>
                 </NextLink>
               </Box>
-            )}
+            ) : null}
             <Button
               type='submit'
               variantColor='teal'
